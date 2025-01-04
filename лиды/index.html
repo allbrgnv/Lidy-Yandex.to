@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заработок и лиды</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(to right, #6a11cb, #2575fc); /* Градиент для страницы */
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            font-family: 'Roboto', sans-serif;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .totals {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .totals h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .archive {
+            margin-top: 20px;
+        }
+        .archive-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .archive-item button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .archive-item button:hover {
+            background: #c0392b;
+        }
+        /* Фон только для модального окна */
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('photo_2024-10-19_11-57-15.jpg') no-repeat center center fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .password-modal .modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 300px; /* Установим фиксированную ширину для модального окна */
+        }
+        .password-modal input {
+            margin-bottom: 15px;
+            width: 100%; /* Поле ввода должно быть по ширине кнопки */
+            padding: 10px; /* Добавим немного отступа внутри */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .password-modal button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .password-modal button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="password-modal" id="passwordModal">
+        <div class="modal-content">
+            <h2>Введите пароль</h2>
+            <input type="password" id="passwordInput" placeholder="Введите пароль">
+            <button id="passwordSubmit">Войти</button>
+        </div>
+    </div>
+    <div class="container" id="mainContent" style="display: none;">
+        <h1>Калькулятор заработка</h1>
+        <label for="leads">Количество лидов:</label>
+        <input type="number" id="leads" placeholder="Введите количество лидов" required>
+
+        <button id="add">Добавить лиды</button>
+        <button id="convert">Перевести на суммы</button>
+
+        <h2 id="result">Итог: 0 рублей</h2>
+
+        <div class="totals">
+            <h3>Общие итоги</h3>
+            <p><strong>Общее количество лидов:</strong> <span id="total-leads">0</span></p>
+            <p><strong>Общий заработок (до вычета комиссии):</strong> <span id="total-earnings">0</span> рублей</p>
+            <p><strong>Общий заработок (после вычета комиссии):</strong> <span id="total-earnings-net">0</span> рублей</p>
+        </div>
+
+        <h3>Архив</h3>
+        <div id="archive" class="archive"></div>
+    </div>
+
+    <script>
+        const passwordModal = document.getElementById('passwordModal');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordSubmit = document.getElementById('passwordSubmit');
+        const mainContent = document.getElementById('mainContent');
+
+        const PASSWORD = '0520';
+
+        passwordSubmit.addEventListener('click', () => {
+            if (passwordInput.value === PASSWORD) {
+                passwordModal.style.display = 'none';
+                mainContent.style.display = 'block';
+            } else {
+                alert('Неверный пароль!');
+            }
+        });
+
+        const leadsInput = document.getElementById('leads');
+        const addButton = document.getElementById('add');
+        const convertButton = document.getElementById('convert');
+        const resultElement = document.getElementById('result');
+        const archiveElement = document.getElementById('archive');
+        const totalLeadsElement = document.getElementById('total-leads');
+        const totalEarningsElement = document.getElementById('total-earnings');
+        const totalEarningsNetElement = document.getElementById('total-earnings-net');
+
+        const RUB_PER_LEAD = 250; // Фиксированная ставка за лид в рублях
+        const COMMISSION_RATE = 0.075; // Комиссия 7.5%
+
+        // Загрузка архива из localStorage
+        let archive = JSON.parse(localStorage.getItem('earningsArchive')) || [];
+
+        // Функция для обновления архива на странице
+        function updateArchive() {
+            archiveElement.innerHTML = '';
+            let totalLeads = 0;
+            let totalEarnings = 0;
+
+            archive.forEach((entry, index) => {
+                totalLeads += entry.leads;
+                totalEarnings += parseFloat(entry.earnings); // Преобразуем заработок в число
+
+                const archiveItem = document.createElement('div');
+                archiveItem.className = 'archive-item';
+                archiveItem.innerHTML = ` 
+                    <strong>Дата и время:</strong> ${entry.date}<br>
+                    <strong>Лиды:</strong> ${entry.leads}<br>
+                    <strong>Заработок:</strong> ${entry.earnings} рублей<br>
+                    <button onclick="deleteEntry(${index})">Удалить</button>
+                `;
+                archiveElement.appendChild(archiveItem);
+            });
+
+            totalLeadsElement.textContent = totalLeads;
+            totalEarningsElement.textContent = totalEarnings.toFixed(2);
+            const netEarnings = totalEarnings - totalEarnings * COMMISSION_RATE;
+            totalEarningsNetElement.textContent = netEarnings.toFixed(2);
+        }
+
+        // Удаление записи из архива
+        function deleteEntry(index) {
+            archive.splice(index, 1);
+            localStorage.setItem('earningsArchive', JSON.stringify(archive));
+            updateArchive();
+        }
+
+        // Обновить архив при загрузке страницы
+        updateArchive();
+
+        // Обработчик для добавления лидов
+        addButton.addEventListener('click', () => {
+            const leads = parseInt(leadsInput.value);
+
+            if (isNaN(leads) || leads <= 0) {
+                alert('Введите корректное количество лидов.');
+                return;
+            }
+
+            let earnings = leads * RUB_PER_LEAD;
+
+            resultElement.textContent = `Итог: ${earnings.toFixed(2)} рублей (без учета комиссии)`;
+
+            const entry = {
+                date: new Date().toLocaleString(), // Используем toLocaleString() для даты и времени
+                leads: leads,
+                earnings: earnings
+            };
+
+            archive.push(entry);
+            localStorage.setItem('earningsArchive', JSON.stringify(archive));
+            updateArchive();
+
+            leadsInput.value = '';
+        });
+
+        // Обработчик для перевода в суммы
+        convertButton.addEventListener('click', () => {
+            const rate = parseFloat(prompt('Введите курс рубля к суму:'));
+
+            if (isNaN(rate) || rate <= 0) {
+                alert('Введите корректный курс.');
+                return;
+            }
+
+            let totalEarningsSum = 0;
+
+            archive.forEach(entry => {
+                totalEarningsSum += parseFloat(entry.earnings) * rate;
+            });
+
+            const netEarningsSum = totalEarningsSum - totalEarningsSum * COMMISSION_RATE;
+
+            alert(`Общий заработок в сумах (с учетом комиссии): ${netEarningsSum.toFixed(2)} сум`);
+        });
+    </script>
+</body>
+</html>
